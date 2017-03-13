@@ -15,40 +15,37 @@
 *******************************************************************************/
 package com.acmeair.web;
 
-import java.util.*;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import javax.ws.rs.core.Response.Status;
-
 import com.acmeair.entities.Booking;
 import com.acmeair.service.BookingService;
 import com.acmeair.web.dto.BookingInfo;
 import com.acmeair.web.dto.BookingReceiptInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping(value = "/bookings")
-@Path("/bookings")
 public class BookingsREST {
 
 	@Autowired
 	private BookingService bs;
 	
-	@POST
-	@Consumes({"application/x-www-form-urlencoded"})
-	@Path("/bookflights")
-	@Produces("application/json")
-//	@RequestMapping(method = RequestMethod.GET, value = "/{id}", produces = "application/json")
-	public /*BookingInfo*/ Response bookFlights(
-			@FormParam("userid") String userid,
-			@FormParam("toFlightId") String toFlightId,
-			@FormParam("toFlightSegId") String toFlightSegId,
-			@FormParam("retFlightId") String retFlightId,
-			@FormParam("retFlightSegId") String retFlightSegId,
-			@FormParam("oneWayFlight") boolean oneWay) {
+	@RequestMapping(method = RequestMethod.POST, value = "/bookflights", produces = "application/json", consumes = "application/x-www-form-urlencoded")
+	public ResponseEntity<BookingReceiptInfo> bookFlights(
+			@RequestParam("userid") String userid,
+			@RequestParam("toFlightId") String toFlightId,
+			@RequestParam("toFlightSegId") String toFlightSegId,
+			@RequestParam("retFlightId") String retFlightId,
+			@RequestParam("retFlightSegId") String retFlightSegId,
+			@RequestParam("oneWayFlight") boolean oneWay) {
 		try {
 			String bookingIdTo = bs.bookFlight(userid, toFlightSegId, toFlightId);
 			String bookingIdReturn = null;
@@ -62,21 +59,19 @@ public class BookingsREST {
 			else
 				bi = new BookingReceiptInfo(bookingIdTo, null, oneWay);
 			
-			return Response.ok(bi).build();
+			return new ResponseEntity<>(bi, HttpStatus.OK);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	
-	@GET
-	@Path("/bybookingnumber/{userid}/{number}")
-	@Produces("application/json")
-//	@RequestMapping(method = RequestMethod.GET, value = "/{id}", produces = "application/json")
+	@RequestMapping(method = RequestMethod.GET, value = "/bybookingnumber/{userid}/{number}", produces = "application/json")
 	public BookingInfo getBookingByNumber(
-			@PathParam("number") String number,
-			@PathParam("userid") String userid) {
+			@PathVariable("number") String number,
+			@PathVariable("userid") String userid
+	) {
 		try {
 			Booking b = bs.getBooking(userid, number);
 			BookingInfo bi = null;
@@ -91,10 +86,8 @@ public class BookingsREST {
 		}
 	}
 	
-	@GET
-	@Path("/byuser/{user}")
-	@Produces("application/json")
-	public List<BookingInfo> getBookingsByUser(@PathParam("user") String user) {
+	@RequestMapping(method = RequestMethod.GET, value = "/byuser/{user}", produces = "application/json")
+	public List<BookingInfo> getBookingsByUser(@PathVariable("user") String user) {
 		try {
 			List<Booking> list =  bs.getBookingsByUser(user);
 			List<BookingInfo> newList = new ArrayList<BookingInfo>();
@@ -109,21 +102,18 @@ public class BookingsREST {
 		}
 	}
 	
-	@POST
-	@Consumes({"application/x-www-form-urlencoded"})
-	@Path("/cancelbooking")
-	@Produces("application/json")
-	public Response cancelBookingsByNumber(
-			@FormParam("number") String number,
-			@FormParam("userid") String userid) {
+	@RequestMapping(method = RequestMethod.POST, value = "/cancelbooking", produces = "application/json", consumes = "application/x-www-form-urlencoded")
+	public ResponseEntity<String> cancelBookingsByNumber(
+			@RequestParam("number") String number,
+			@RequestParam("userid") String userid) {
 		try {
 			bs.cancelBooking(userid, number);
-			return Response.ok("booking " + number + " deleted.").build();
+			return new ResponseEntity<>("booking " + number + " deleted.", HttpStatus.OK);
 					
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 	
